@@ -1,0 +1,692 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Zoology 4th Sem — AI Question Generator</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=Source+Serif+4:ital,wght@0,300;0,400;0,600;1,300&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0b0f14;
+    --surface: #111820;
+    --card: #161e28;
+    --border: #1f2d3d;
+    --accent: #3ecf8e;
+    --accent2: #4da6ff;
+    --accent3: #f7c948;
+    --text: #e8edf2;
+    --muted: #7a8fa6;
+    --danger: #ff6b6b;
+  }
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Source Serif 4', serif;
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* Background grid */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image:
+      linear-gradient(rgba(62,207,142,0.03) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(62,207,142,0.03) 1px, transparent 1px);
+    background-size: 40px 40px;
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  .container { max-width: 900px; margin: 0 auto; padding: 0 24px; position: relative; z-index: 1; }
+
+  /* Header */
+  header {
+    padding: 48px 24px 32px;
+    text-align: center;
+    position: relative;
+  }
+  .badge {
+    display: inline-block;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 2px;
+    color: var(--accent);
+    border: 1px solid rgba(62,207,142,0.3);
+    padding: 4px 12px;
+    border-radius: 20px;
+    margin-bottom: 16px;
+    background: rgba(62,207,142,0.07);
+    text-transform: uppercase;
+  }
+  h1 {
+    font-family: 'Playfair Display', serif;
+    font-size: clamp(28px, 5vw, 52px);
+    font-weight: 900;
+    line-height: 1.1;
+    background: linear-gradient(135deg, #e8edf2 0%, #3ecf8e 60%, #4da6ff 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    margin-bottom: 12px;
+  }
+  .subtitle {
+    color: var(--muted);
+    font-size: 16px;
+    font-style: italic;
+    font-weight: 300;
+  }
+
+  /* Syllabus info strip */
+  .syllabus-strip {
+    display: flex;
+    gap: 12px;
+    flex-wrap: wrap;
+    justify-content: center;
+    margin: 24px 0 40px;
+  }
+  .chip {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12px;
+    padding: 6px 14px;
+    border-radius: 6px;
+    border: 1px solid var(--border);
+    background: var(--card);
+    color: var(--muted);
+  }
+  .chip span { color: var(--accent3); font-weight: 600; }
+
+  /* Controls */
+  .controls-box {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 28px;
+    margin-bottom: 28px;
+  }
+  .controls-box h2 {
+    font-family: 'Playfair Display', serif;
+    font-size: 18px;
+    color: var(--accent2);
+    margin-bottom: 20px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .controls-box h2::before { content: '⚙'; font-size: 16px; }
+
+  .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  @media (max-width: 600px) { .grid2 { grid-template-columns: 1fr; } }
+
+  label {
+    display: block;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 8px;
+  }
+  select, input[type=number] {
+    width: 100%;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    color: var(--text);
+    padding: 10px 14px;
+    border-radius: 8px;
+    font-family: 'Source Serif 4', serif;
+    font-size: 14px;
+    outline: none;
+    transition: border-color 0.2s;
+    appearance: none;
+    cursor: pointer;
+  }
+  select:focus, input[type=number]:focus { border-color: var(--accent); }
+
+  .checkbox-group {
+    display: flex;
+    gap: 12px;
+    flex-wrap: wrap;
+    margin-top: 4px;
+  }
+  .check-label {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    cursor: pointer;
+    font-size: 13px;
+    color: var(--text);
+    font-family: 'Source Serif 4', serif;
+    font-weight: 400;
+    text-transform: none;
+    letter-spacing: 0;
+    padding: 8px 16px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    transition: all 0.2s;
+  }
+  .check-label:hover { border-color: var(--accent); color: var(--accent); }
+  .check-label input[type=checkbox] { accent-color: var(--accent); width: 15px; height: 15px; }
+  .check-label.active { border-color: var(--accent); background: rgba(62,207,142,0.08); }
+
+  /* Generate button */
+  .btn-generate {
+    width: 100%;
+    margin-top: 20px;
+    padding: 16px;
+    background: linear-gradient(135deg, var(--accent), #2ab37a);
+    color: #0b0f14;
+    font-family: 'Playfair Display', serif;
+    font-size: 17px;
+    font-weight: 700;
+    border: none;
+    border-radius: 10px;
+    cursor: pointer;
+    transition: all 0.2s;
+    letter-spacing: 0.5px;
+    position: relative;
+    overflow: hidden;
+  }
+  .btn-generate:hover { transform: translateY(-1px); box-shadow: 0 8px 24px rgba(62,207,142,0.3); }
+  .btn-generate:active { transform: translateY(0); }
+  .btn-generate:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+
+  /* Loading */
+  .loading-bar {
+    height: 2px;
+    background: linear-gradient(90deg, var(--accent), var(--accent2), var(--accent3));
+    border-radius: 2px;
+    margin-top: 16px;
+    display: none;
+    animation: shimmer 1.5s infinite;
+    background-size: 200% 100%;
+  }
+  @keyframes shimmer {
+    0% { background-position: 200% 0; }
+    100% { background-position: -200% 0; }
+  }
+  .loading-bar.active { display: block; }
+
+  /* Output */
+  #output {
+    margin-top: 8px;
+  }
+
+  .section-header {
+    font-family: 'Playfair Display', serif;
+    font-size: 22px;
+    font-weight: 700;
+    color: var(--accent3);
+    margin: 32px 0 16px;
+    padding-bottom: 8px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .q-card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    margin-bottom: 16px;
+    overflow: hidden;
+    transition: border-color 0.2s;
+    animation: fadeUp 0.4s ease both;
+  }
+  .q-card:hover { border-color: rgba(62,207,142,0.25); }
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(12px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+
+  .q-header {
+    padding: 16px 20px;
+    display: flex;
+    align-items: flex-start;
+    gap: 14px;
+    cursor: pointer;
+    user-select: none;
+  }
+  .q-num {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    font-weight: 600;
+    min-width: 32px;
+    height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 6px;
+    flex-shrink: 0;
+    margin-top: 2px;
+  }
+  .short .q-num { background: rgba(62,207,142,0.12); color: var(--accent); }
+  .long  .q-num { background: rgba(77,166,255,0.12); color: var(--accent2); }
+  .vlong .q-num { background: rgba(247,201,72,0.12); color: var(--accent3); }
+
+  .q-text {
+    font-size: 15px;
+    font-weight: 600;
+    line-height: 1.5;
+    flex: 1;
+    color: var(--text);
+  }
+  .q-toggle {
+    font-size: 18px;
+    color: var(--muted);
+    flex-shrink: 0;
+    transition: transform 0.2s;
+  }
+  .q-card.open .q-toggle { transform: rotate(180deg); }
+
+  .q-answer {
+    display: none;
+    padding: 0 20px 20px;
+    border-top: 1px solid var(--border);
+    margin-top: 0;
+  }
+  .q-card.open .q-answer { display: block; }
+  .q-answer p {
+    font-size: 14px;
+    line-height: 1.8;
+    color: #c5d0db;
+    font-weight: 300;
+    padding-top: 16px;
+  }
+  .word-tag {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    padding: 2px 8px;
+    border-radius: 4px;
+    margin-left: 8px;
+    vertical-align: middle;
+  }
+  .short .word-tag { background: rgba(62,207,142,0.1); color: var(--accent); }
+  .long  .word-tag { background: rgba(77,166,255,0.1); color: var(--accent2); }
+  .vlong .word-tag { background: rgba(247,201,72,0.1); color: var(--accent3); }
+
+  .copy-btn {
+    float: right;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    padding: 4px 10px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    color: var(--muted);
+    cursor: pointer;
+    transition: all 0.15s;
+    margin-top: 12px;
+  }
+  .copy-btn:hover { border-color: var(--accent); color: var(--accent); }
+
+  .status-msg {
+    text-align: center;
+    padding: 40px 20px;
+    color: var(--muted);
+    font-style: italic;
+    font-size: 15px;
+  }
+  .status-msg span { color: var(--accent); }
+
+  .error-box {
+    background: rgba(255,107,107,0.08);
+    border: 1px solid rgba(255,107,107,0.25);
+    border-radius: 10px;
+    padding: 16px 20px;
+    color: var(--danger);
+    font-size: 14px;
+    margin-top: 16px;
+    font-family: 'JetBrains Mono', monospace;
+  }
+
+  .pill-row {
+    display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 20px;
+  }
+  .pill {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    padding: 5px 12px;
+    border-radius: 20px;
+    cursor: pointer;
+    border: 1px solid var(--border);
+    color: var(--muted);
+    background: var(--surface);
+    transition: all 0.15s;
+  }
+  .pill:hover, .pill.active { border-color: var(--accent2); color: var(--accent2); background: rgba(77,166,255,0.08); }
+
+  footer {
+    text-align: center;
+    padding: 40px 20px;
+    color: var(--muted);
+    font-size: 12px;
+    font-family: 'JetBrains Mono', monospace;
+    border-top: 1px solid var(--border);
+    margin-top: 60px;
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="badge">AI-Powered Study Tool</div>
+  <h1>Zoology 4th Semester<br>Question Generator</h1>
+  <p class="subtitle">University Exam-Oriented Questions & Answers</p>
+</header>
+
+<div class="container">
+
+  <div class="syllabus-strip">
+    <div class="chip">Subject: <span>Immunology</span></div>
+    <div class="chip">Subject: <span>Parasitology</span></div>
+    <div class="chip">Theory: <span>4 Credits</span></div>
+    <div class="chip">Practical: <span>2 Credits</span></div>
+    <div class="chip">Units: <span>4 per Subject</span></div>
+  </div>
+
+  <div class="controls-box">
+    <h2>Generate Questions</h2>
+
+    <div style="margin-bottom:20px">
+      <label>Subject</label>
+      <select id="subject">
+        <option value="immunology">Fundamentals of Immunology</option>
+        <option value="parasitology">Fundamentals of Parasitology</option>
+        <option value="both">Both Subjects</option>
+      </select>
+    </div>
+
+    <div style="margin-bottom:20px">
+      <label>Chapter / Unit</label>
+      <div class="pill-row" id="unit-pills"></div>
+    </div>
+
+    <div class="grid2" style="margin-bottom:20px">
+      <div>
+        <label>Question Types</label>
+        <div class="checkbox-group">
+          <label class="check-label active" id="lbl-short">
+            <input type="checkbox" id="cb-short" checked> Short (~20w)
+          </label>
+          <label class="check-label active" id="lbl-long">
+            <input type="checkbox" id="cb-long" checked> Long (~200w)
+          </label>
+          <label class="check-label active" id="lbl-vlong">
+            <input type="checkbox" id="cb-vlong" checked> Very Long (300-400w)
+          </label>
+        </div>
+      </div>
+      <div>
+        <label>Questions per Type</label>
+        <input type="number" id="q-count" value="3" min="1" max="8">
+      </div>
+    </div>
+
+    <button class="btn-generate" id="gen-btn" onclick="generateQuestions()">
+      ✦ Generate Exam Questions
+    </button>
+    <div class="loading-bar" id="loading-bar"></div>
+  </div>
+
+  <div id="output">
+    <div class="status-msg">Select a subject & unit, then click <span>Generate</span> to create exam-oriented questions with answers.</div>
+  </div>
+
+</div>
+
+<footer>Zoology AI Question Generator · Built for 4th Semester University Exams</footer>
+
+<script>
+const SYLLABUS = {
+  immunology: {
+    name: "Fundamentals of Immunology",
+    units: [
+      { id: "I1", label: "Unit I", title: "Overview of Immune System",
+        topics: "Historical background & scope of immunology; cells, tissues and organs of the immune system; innate immunity and acquired immunity; vaccines and their types" },
+      { id: "I2", label: "Unit II", title: "Molecules of Immune System",
+        topics: "Antigens: nature & types, antigen processing & presentation; MHC: functions & types; Antibodies: structure, types & functions; theories of antibody formation; monoclonal antibodies; Cytokines: types, properties and functions; Complement system: components & pathways of its activation" },
+      { id: "I3", label: "Unit III", title: "Immunodeficiency and Tumor Immunology",
+        topics: "Immune deficiencies: primary & secondary; stem cell, T & B-cell & complement deficiencies; Acquired immunodeficiency syndrome; Tumor immunology: immune surveillance, tumor associated antigens & tumor escape mechanisms; Tumor immunotherapy: antigen non-specific & antigen specific" },
+      { id: "I4", label: "Unit IV", title: "Damaging and Defective Immune Response",
+        topics: "Concept & classification of hypersensitivity reactions with brief descriptions; Mechanism of type I and type II hypersensitivity reactions; Introduction to autoimmune (AI) diseases with emphasis on AI anaemia's & rheumatoid arthritis; Transplantation immunology: types of grafts; mechanism of homograft rejection" }
+    ]
+  },
+  parasitology: {
+    name: "Fundamentals of Parasitology",
+    units: [
+      { id: "P1", label: "Unit I", title: "Introduction to Parasitology",
+        topics: "Animal associations with special emphasis on parasitism; terms & definitions in parasitology; Origin, evolution and distribution of parasites in animal kingdom; parasitic adaptations; Host parasite relationships; Zoonosis: definitions & types" },
+      { id: "P2", label: "Unit II", title: "Medical Parasitology",
+        topics: "Protozoan parasites of man with emphasis on Entamoeba & Plasmodium; Trematode parasites of man with emphasis on Schistosoma & Paragonimus; Cestode parasites of man with emphasis on Taenia & Diphyllobothrium; Nematode parasites of man with emphasis on Ascaris & Ancylostoma" },
+      { id: "P3", label: "Unit III", title: "Veterinary Parasitology",
+        topics: "Protozoan parasites of poultry & cattle (Babesia); Trematode parasites of fish (Diplozoon) & ruminants (Fasciola); Cestode parasites of fish (Adenoscolex) & ruminants (Moneizia); Nematode parasites of fish aves (Heterakis) & ruminants (Haemonchus)" },
+      { id: "P4", label: "Unit IV", title: "Agricultural Nematology & Acanthocephalans",
+        topics: "Introduction to phytonematodes with emphasis on their ecology & biology; Morphology, Life-cycle, pathogenicity and management of Meloidogyne; General account and distinguished features of acanthocephalans; Acanthocephalan parasites of fish (Pomphorhynchus)" }
+    ]
+  }
+};
+
+let selectedUnit = null;
+
+function updateUnitPills() {
+  const subj = document.getElementById('subject').value;
+  const container = document.getElementById('unit-pills');
+  container.innerHTML = '';
+  selectedUnit = null;
+
+  let units = [];
+  if (subj === 'both') {
+    units = [...SYLLABUS.immunology.units, ...SYLLABUS.parasitology.units];
+  } else {
+    units = SYLLABUS[subj].units;
+  }
+
+  const allPill = document.createElement('div');
+  allPill.className = 'pill active';
+  allPill.textContent = 'All Units';
+  allPill.onclick = () => { selectPill(null, allPill); };
+  container.appendChild(allPill);
+
+  units.forEach(u => {
+    const p = document.createElement('div');
+    p.className = 'pill';
+    p.textContent = `${u.label}: ${u.title}`;
+    p.onclick = () => selectPill(u.id, p);
+    container.appendChild(p);
+  });
+}
+
+function selectPill(uid, el) {
+  document.querySelectorAll('.pill').forEach(p => p.classList.remove('active'));
+  el.classList.add('active');
+  selectedUnit = uid;
+}
+
+document.getElementById('subject').addEventListener('change', updateUnitPills);
+updateUnitPills();
+
+// Checkbox toggle styling
+['short','long','vlong'].forEach(t => {
+  document.getElementById('cb-'+t).addEventListener('change', function() {
+    document.getElementById('lbl-'+t).classList.toggle('active', this.checked);
+  });
+});
+
+async function generateQuestions() {
+  const subj = document.getElementById('subject').value;
+  const count = parseInt(document.getElementById('q-count').value) || 3;
+  const doShort = document.getElementById('cb-short').checked;
+  const doLong  = document.getElementById('cb-long').checked;
+  const doVlong = document.getElementById('cb-vlong').checked;
+
+  if (!doShort && !doLong && !doVlong) {
+    alert('Please select at least one question type.'); return;
+  }
+
+  // Collect topics
+  let topicsText = '';
+  let subjectName = '';
+  let unitFilter = selectedUnit;
+
+  const allUnits = subj === 'both'
+    ? [...SYLLABUS.immunology.units, ...SYLLABUS.parasitology.units]
+    : SYLLABUS[subj].units;
+
+  const units = unitFilter
+    ? allUnits.filter(u => u.id === unitFilter)
+    : allUnits;
+
+  subjectName = subj === 'both'
+    ? 'Immunology & Parasitology'
+    : SYLLABUS[subj].name;
+
+  topicsText = units.map(u => `${u.label} - ${u.title}:\n${u.topics}`).join('\n\n');
+
+  const types = [];
+  if (doShort) types.push(`${count} Short Answer Questions (answers ~20 words each)`);
+  if (doLong)  types.push(`${count} Long Answer Questions (answers ~200 words each)`);
+  if (doVlong) types.push(`${count} Very Long Answer Questions (answers 300-400 words each)`);
+
+  const prompt = `You are an expert university examination question setter and answer writer for Zoology undergraduate students (4th semester). 
+
+Subject: ${subjectName}
+Syllabus Topics:
+${topicsText}
+
+Generate the following exam-oriented questions with detailed model answers strictly within the specified word limits. Focus on the MOST EXPECTED university examination questions:
+
+${types.join('\n')}
+
+FORMAT YOUR RESPONSE AS VALID JSON ONLY. No extra text outside the JSON. Structure:
+{
+  "sections": [
+    {
+      "type": "short|long|vlong",
+      "label": "Short Answer Questions (~20 words)" | "Long Answer Questions (~200 words)" | "Very Long Answer Questions (300-400 words)",
+      "questions": [
+        { "q": "Question text here?", "a": "Answer text here." }
+      ]
+    }
+  ]
+}
+
+Rules:
+- Short answers: definitions, one-liners, exactly what a student needs for 2-mark questions
+- Long answers: well-structured paragraphs, cover mechanism/structure/function
+- Very long answers: introduction + detailed body with subheadings/points + conclusion, exam-standard language
+- All questions must be directly from the syllabus topics listed above
+- Use precise scientific terminology`;
+
+  // UI loading state
+  const btn = document.getElementById('gen-btn');
+  const bar = document.getElementById('loading-bar');
+  const output = document.getElementById('output');
+  btn.disabled = true;
+  btn.textContent = '⟳  Generating...';
+  bar.classList.add('active');
+  output.innerHTML = '<div class="status-msg">⟳  AI is generating questions — please wait...</div>';
+
+  try {
+    const apiKey = localStorage.getItem('anthropic-api-key') || prompt('Enter your Anthropic API Key (will be saved locally):');
+    
+    if (!apiKey) {
+      throw new Error('API key is required');
+    }
+    
+    localStorage.setItem('anthropic-api-key', apiKey);
+
+    const res = await fetch("https://api.anthropic.com/v1/messages", {
+      method: "POST",
+      headers: { 
+        "Content-Type": "application/json",
+        "x-api-key": apiKey,
+        "anthropic-version": "2023-06-01"
+      },
+      body: JSON.stringify({
+        model: "claude-3-5-sonnet-20241022",
+        max_tokens: 4000,
+        messages: [{ role: "user", content: prompt }]
+      })
+    });
+
+    const data = await res.json();
+    if (data.error) throw new Error(data.error.message);
+
+    const raw = data.content.map(c => c.text || '').join('');
+    const clean = raw.replace(/```json|```/g, '').trim();
+    const parsed = JSON.parse(clean);
+    renderOutput(parsed, subjectName, units);
+
+  } catch(err) {
+    output.innerHTML = `<div class="error-box">⚠ Error: ${err.message}<br><br>Make sure:<br>• You have a valid Anthropic API key<br>• API key is saved locally for future use<br>• Check browser console for details</div>`;
+    console.error(err);
+  } finally {
+    btn.disabled = false;
+    btn.textContent = '✦ Generate Exam Questions';
+    bar.classList.remove('active');
+  }
+}
+
+function renderOutput(data, subjectName, units) {
+  const output = document.getElementById('output');
+  let html = '';
+
+  html += '<div style="margin-bottom: 20px; padding: 16px; background: var(--surface); border: 1px solid var(--border); border-radius: 10px;">';
+  html += `<strong>Subject:</strong> ${subjectName}<br>`;
+  html += `<strong>Units:</strong> ${units.map(u => u.label).join(', ')}<br>`;
+  html += `<strong>Generated:</strong> ${new Date().toLocaleString()}`;
+  html += '</div>';
+
+  const typeIcons = { short: '📝', long: '📄', vlong: '📚' };
+
+  if (data.sections && Array.isArray(data.sections)) {
+    data.sections.forEach(sec => {
+      const icon = typeIcons[sec.type] || '❓';
+      html += `<div class="section-header">${icon} ${sec.label}</div>`;
+
+      sec.questions.forEach((q, idx) => {
+        const qClass = sec.type === 'short' ? 'short' : sec.type === 'long' ? 'long' : 'vlong';
+        const wordCount = q.a.split(/\s+/).length;
+        html += `
+          <div class="q-card ${qClass}" onclick="this.classList.toggle('open')">
+            <div class="q-header">
+              <div class="q-num">${idx + 1}</div>
+              <div class="q-text">${q.q}</div>
+              <div class="q-toggle">▼</div>
+            </div>
+            <div class="q-answer">
+              <p>${q.a}</p>
+              <button class="copy-btn" onclick="copyToClipboard(event, this.parentElement.querySelector('p').textContent)">
+                Copy Answer
+              </button>
+              <span class="word-tag">${wordCount} words</span>
+            </div>
+          </div>
+        `;
+      });
+    });
+  } else {
+    html += '<div class="error-box">⚠ Could not parse response. Please check the API response format.</div>';
+  }
+
+  output.innerHTML = html;
+}
+
+function copyToClipboard(e, text) {
+  e.stopPropagation();
+  navigator.clipboard.writeText(text).then(() => {
+    const btn = e.target;
+    const orig = btn.textContent;
+    btn.textContent = '✓ Copied!';
+    setTimeout(() => { btn.textContent = orig; }, 2000);
+  }).catch(err => console.error('Copy failed:', err));
+}
+</script>
+
+</body>
+</html>
